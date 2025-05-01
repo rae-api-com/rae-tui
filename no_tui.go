@@ -76,7 +76,7 @@ func renderNoTUI(ctx context.Context, cli *rae.Client, word string) {
 	}
 }
 
-func printConjugations(conjugation interface{}) {
+func printConjugations(conjugation any) {
 	personas := []string{"Yo", "Tú", "Él/Ella", "Nosotros", "Vosotros", "Ellos/Ellas"}
 
 	switch c := conjugation.(type) {
