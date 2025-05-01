@@ -47,7 +47,7 @@ changelog:
 release:
   github:
     owner: rae-api-com
-    name: rae-api
+    name: rae-tui
   draft: false
   replace_existing_draft: true
   replace_existing_artifacts: true
