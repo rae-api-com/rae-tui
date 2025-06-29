@@ -8,7 +8,7 @@ import (
 
 	rae "github.com/rae-api-com/go-rae"
 	"github.com/rivo/tview"
-	"github.com/sonirico/stadio/fp"
+	"github.com/sonirico/vago/fp"
 )
 
 type State struct {

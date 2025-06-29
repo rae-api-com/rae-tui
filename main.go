@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	rae "github.com/rae-api-com/go-rae"
-	"github.com/sonirico/stadio/fp"
+	"github.com/sonirico/vago/fp"
 )
 
 // These variables are set during build using ldflags
