@@ -1,9 +1,12 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"fmt"
-	"log"
+	"os"
+	"strconv"
+	"strings"
 
 	rae "github.com/rae-api-com/go-rae"
 )
@@ -21,10 +24,63 @@ const (
 	Bold   = "\033[1m"
 )
 
+// selectWordFromSuggestions displays a list of suggested words and allows the user to select one
+func selectWordFromSuggestions(suggestions []string) string {
+	if len(suggestions) == 0 {
+		return ""
+	}
+
+	// Display numbered list of suggestions
+	for i, suggestion := range suggestions {
+		fmt.Printf("  %s%d%s. %s\n", Yellow, i+1, Reset, suggestion)
+	}
+	fmt.Printf("  %s0%s. Cancel\n", Yellow, Reset)
+	fmt.Printf("\n%sSelect a word (1-%d) or 0 to cancel: %s", Cyan, len(suggestions), Reset)
+
+	// Read user input
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	input := strings.TrimSpace(scanner.Text())
+
+	// Parse selection
+	choice, err := strconv.Atoi(input)
+	if err != nil {
+		fmt.Printf("%sInvalid input. Please enter a number.%s\n", Red, Reset)
+		return ""
+	}
+
+	// Validate choice
+	if choice == 0 {
+		fmt.Printf("%sCancelled.%s\n", Yellow, Reset)
+		return ""
+	}
+
+	if choice < 1 || choice > len(suggestions) {
+		fmt.Printf(
+			"%sInvalid choice. Please select a number between 1 and %d.%s\n",
+			Red,
+			len(suggestions),
+			Reset,
+		)
+		return ""
+	}
+
+	return suggestions[choice-1]
+}
+
 func renderNoTUI(ctx context.Context, cli *rae.Client, word string) {
 	res, err := cli.Word(ctx, word)
 	if err != nil {
-		log.Println(err)
+		if len(res.Suggestions) > 0 {
+			fmt.Printf("Did you mean:\n")
+			selectedWord := selectWordFromSuggestions(res.Suggestions)
+			if selectedWord != "" {
+				fmt.Printf("\n%sSearching for: %s%s\n", Bold, selectedWord, Reset)
+				renderNoTUI(ctx, cli, selectedWord) // Recursively search with selected word
+			}
+		} else {
+			fmt.Printf("%sNo word found and no suggestions available for: %s%s\n", Red, word, Reset)
+		}
 		return
 	}
 
