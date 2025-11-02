@@ -1,4 +1,4 @@
-# 📖 RAE-TUI
+# RAE-TUI
 
 [![Go Version](https://img.shields.io/github/go-mod/go-version/rae-api-com/rae-tui)](https://golang.org/)
 [![Go Report Card](https://goreportcard.com/badge/github.com/rae-api-com/rae-tui)](https://goreportcard.com/report/github.com/rae-api-com/rae-tui)
@@ -6,49 +6,39 @@
 [![Release](https://img.shields.io/github/v/release/rae-api-com/rae-tui)](https://github.com/rae-api-com/rae-tui/releases)
 [![Build Status](https://github.com/rae-api-com/rae-tui/workflows/CI/badge.svg)](https://github.com/rae-api-com/rae-tui/actions)
 
-Un cliente de diccionario español elegante y rápido para la terminal, conectado a la Real Academia Española (RAE). 
+Cliente de diccionario español para la terminal, conectado a la Real Academia Española (RAE).
 
 ![RAE-TUI Demo](demo.gif)
 
-> 🎯 **Perfecto para**: Escritores, estudiantes, desarrolladores y cualquiera que necesite consultas rápidas del diccionario sin salir de la terminal.
+## Características
 
-## ✨ Características
+- **Búsqueda instantánea** - Consulta palabras directamente desde tu terminal
+- **Definiciones completas** - Visualiza significados detallados y acepciones múltiples
+- **Búsqueda difusa** - Cuando no se encuentra una palabra exacta, busca automáticamente términos similares con resultados relevantes
+- **Interfaz interactiva** - TUI moderna con navegación por teclado intuitiva
+- **Conjugaciones verbales** - Muestra todas las conjugaciones en todos los tiempos
+- **Modo CLI** - Consultas no-interactivas para uso en scripts
+- **Sin configuración** - Funciona inmediatamente sin API keys
 
-- 🔍 **Búsqueda Instantánea** - Consulta palabras directamente desde tu terminal
-- 📚 **Definiciones Completas** - Visualiza significados detallados y acepciones múltiples
-- 🖥️ **Interfaz Interactiva** - TUI moderna con navegación por teclado intuitiva
-- 🔄 **Conjugaciones Verbales** - Muestra todas las conjugaciones en todos los tiempos
-- ⚡ **Modo CLI Rápido** - Consultas no-interactivas para uso en scripts
-- 🔓 **Sin API Key** - Funciona inmediatamente sin configuración
-- 🎨 **Colores y Formato** - Salida elegante y fácil de leer
-- 📱 **Multiplataforma** - Funciona en Linux, macOS y Windows
+## Instalación
 
-## 📦 Instalación
-
-### 🚀 Instalación Rápida (Recomendada)
+### Instalación rápida
 
 ```bash
 go install github.com/rae-api-com/rae-tui@latest
 ```
 
-### 📥 Binarios Precompilados
+### Binarios precompilados
 
 Descarga el binario apropiado para tu plataforma desde la página de [Releases](https://github.com/rae-api-com/rae-tui/releases).
 
 #### Linux/macOS
+
 ```bash
-# Descargar y instalar automáticamente
 curl -sf https://gobinaries.com/rae-api-com/rae-tui | sh
 ```
 
-#### Windows
-```powershell
-# Usando Scoop
-scoop bucket add rae-api-com https://github.com/rae-api-com/scoop-bucket
-scoop install rae-tui
-```
-
-### 🔨 Desde Código Fuente
+### Desde código fuente
 
 ```bash
 git clone https://github.com/rae-api-com/rae-tui.git
@@ -56,9 +46,9 @@ cd rae-tui
 go build -o rae-tui
 ```
 
-## 🎮 Uso
+## Uso
 
-### 🖥️ Modo Interactivo (TUI)
+### Modo interactivo (TUI)
 
 Lanza la interfaz interactiva completa:
 
@@ -68,12 +58,13 @@ rae-tui
 rae-tui tui
 ```
 
-**Búsqueda directa con una palabra:**
+Búsqueda directa con una palabra:
+
 ```bash
 rae-tui tui hola
 ```
 
-### ⚡ Modo CLI (Rápido)
+### Modo CLI
 
 Consulta directa para scripts o uso rápido:
 
@@ -83,12 +74,30 @@ rae-tui palabra
 rae-tui computadora
 ```
 
-**Salida en formato JSON:**
+#### Búsqueda difusa automática
+
+Cuando una palabra no se encuentra en el diccionario y no hay sugerencias disponibles, el CLI automáticamente ejecuta una búsqueda difusa para encontrar palabras similares. Puedes seleccionar una de las opciones encontradas:
+
 ```bash
-rae-tui --json palabra
+rae-tui "persona que programa"
 ```
 
-### 🎯 Ejemplos Prácticos
+Si no hay resultados exactos, se mostrará una lista de palabras similares con una vista previa de sus definiciones:
+
+```
+No se encontró la palabra y no hay sugerencias disponibles para: persona que programa
+Buscando resultados difusos...
+
+Búsqueda difusa - Resultados encontrados:
+  1. programador - 1. adj. Que programa. U. t. c. s.
+  2. programadora - 1. adj. Que programa. U. t. c. s.
+  3. programadores - 1. adj. Que programa. U. t. c. s.
+  4. coguionista - 1. m. y f. Persona que escribe junto con otra u otras el gui...
+
+Selecciona una palabra (1-4) o 0 para cancelar:
+```
+
+### Ejemplos prácticos
 
 ```bash
 # Buscar un verbo y ver conjugaciones
@@ -103,43 +112,22 @@ fi
 echo "palabras\nque\nbuscar" | xargs -I {} rae-tui {}
 ```
 
-### ⌨️ Atajos de Teclado (Modo TUI)
+### Atajos de teclado (Modo TUI)
 
 | Tecla          | Acción                         |
 | -------------- | ------------------------------ |
-| `↑` / `k`      | ⬆️ Mover selección hacia arriba |
-| `↓` / `j`      | ⬇️ Mover selección hacia abajo  |
-| `n` / `Ctrl+N` | 🔍 Buscar nueva palabra         |
-| `q` / `ESC`    | ❌ Salir o volver atrás         |
-| `Enter`        | ✅ Seleccionar elemento         |
-| `Tab`          | 🔄 Cambiar entre paneles        |
-| `?` / `h`      | ❓ Mostrar ayuda                |
-| `Ctrl+C`       | 🚪 Salir inmediatamente         |
+| `↑` / `k`      | Mover selección hacia arriba    |
+| `↓` / `j`      | Mover selección hacia abajo     |
+| `n` / `Ctrl+N` | Buscar nueva palabra            |
+| `q` / `ESC`    | Salir o volver atrás            |
+| `Enter`        | Seleccionar elemento            |
+| `Tab`          | Cambiar entre paneles           |
+| `?` / `h`      | Mostrar ayuda                   |
+| `Ctrl+C`       | Salir inmediatamente            |
 
-### 🎨 Personalización
+## Desarrollo
 
-**Variables de entorno:**
-```bash
-# Personalizar colores
-export RAE_TUI_THEME="dark"  # dark, light, auto
-export RAE_TUI_ACCENT="blue" # blue, green, red, purple
-
-# Configurar timeout
-export RAE_TUI_TIMEOUT="10s"
-```
-
-**Archivo de configuración (`~/.config/rae-tui/config.yaml`):**
-```yaml
-theme: "dark"
-accent_color: "blue"
-timeout: "10s"
-cache_enabled: true
-cache_duration: "24h"
-```
-
-## 🏗️ Desarrollo
-
-### 🔧 Configuración del Entorno
+### Configuración del entorno
 
 ```bash
 # Clonar el repositorio
@@ -153,7 +141,7 @@ go mod download
 go run . tui
 ```
 
-### 🧪 Testing
+### Testing
 
 ```bash
 # Ejecutar tests
@@ -166,7 +154,7 @@ make test-coverage
 make ci
 ```
 
-### 📦 Build
+### Build
 
 ```bash
 # Build local
@@ -179,60 +167,57 @@ make build-all
 make build VERSION=v1.0.0
 ```
 
-## 🤝 Contribuir
+## Contribuir
 
-¡Las contribuciones son súper bienvenidas! 
+Las contribuciones son bienvenidas. 
 
-1. 🍴 Haz fork del proyecto
-2. 🌿 Crea tu rama de feature (`git checkout -b feature/AmazingFeature`)
-3. 💾 Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
-4. 📤 Push a la rama (`git push origin feature/AmazingFeature`)
-5. 🔁 Abre un Pull Request
+1. Haz fork del proyecto
+2. Crea tu rama de feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
-### 💡 Ideas para Contribuir
+### Ideas para contribuir
 
-- 🎨 Mejoras en la UI/UX
-- 🔍 Nuevas funcionalidades de búsqueda
-- 🌍 Soporte para más idiomas
-- 📱 Integración con otras APIs
-- 🐛 Corrección de bugs
-- 📚 Mejoras en documentación
+- Mejoras en la UI/UX
+- Nuevas funcionalidades de búsqueda
+- Soporte para más idiomas
+- Integración con otras APIs
+- Corrección de bugs
+- Mejoras en documentación
 
-## 📈 Roadmap
+## Roadmap
 
-- [ ] 🌙 Tema oscuro/claro automático
-- [ ] 💾 Sistema de cache local
-- [ ] 📖 Historial de búsquedas
-- [ ] 🔖 Sistema de favoritos
-- [ ] 🎵 Pronunciación de palabras
-- [ ] 📱 Versión móvil/web
-- [ ] 🤖 Integración con ChatGPT/AI
+- [ ] Tema oscuro/claro automático
+- [ ] Sistema de cache local
+- [ ] Historial de búsquedas
+- [ ] Sistema de favoritos
+- [ ] Pronunciación de palabras
 
-## 📝 Licencia
+## Licencia
 
 Este proyecto está bajo la [Licencia MIT](LICENSE).
 
-## 🙏 Reconocimientos
+## Reconocimientos
 
-- 🚀 **[go-rae](https://github.com/rae-api-com/go-rae)** - Cliente Go para la API de la RAE
-- 🖥️ **[tview](https://github.com/rivo/tview)** - Biblioteca para interfaces de terminal
-- 🎬 **[Terminalizer](https://terminalizer.com/)** - Usado para crear los GIFs de demostración
-- 📚 **[Real Academia Española](https://www.rae.es/)** - Por mantener el diccionario más completo del español
+- **[go-rae](https://github.com/rae-api-com/go-rae)** - Cliente Go para la API de la RAE
+- **[tview](https://github.com/rivo/tview)** - Biblioteca para interfaces de terminal
+- **[Real Academia Española](https://www.rae.es/)** - Por mantener el diccionario más completo del español
 
-## 📧 Soporte
+## Soporte
 
 ¿Tienes algún problema o sugerencia?
 
-- 🐛 [Reportar un bug](https://github.com/rae-api-com/rae-tui/issues/new?template=bug_report.md)
-- 💡 [Solicitar una funcionalidad](https://github.com/rae-api-com/rae-tui/issues/new?template=feature_request.md)
-- 💬 [Iniciar una discusión](https://github.com/rae-api-com/rae-tui/discussions)
-- 📖 [Documentación completa](https://pkg.go.dev/github.com/rae-api-com/rae-tui)
+- [Reportar un bug](https://github.com/rae-api-com/rae-tui/issues/new?template=bug_report.md)
+- [Solicitar una funcionalidad](https://github.com/rae-api-com/rae-tui/issues/new?template=feature_request.md)
+- [Iniciar una discusión](https://github.com/rae-api-com/rae-tui/discussions)
+- [Documentación completa](https://pkg.go.dev/github.com/rae-api-com/rae-tui)
 
 ---
 
 <div align="center">
 
-**Hecho con ❤️ para los amantes del español y la terminal**
+Hecho con ❤️ para los amantes del español y la terminal
 
 [⭐ Dale una estrella si te gusta el proyecto](https://github.com/rae-api-com/rae-tui/stargazers) • [🐛 Reportar un problema](https://github.com/rae-api-com/rae-tui/issues) • [💬 Unirse a la discusión](https://github.com/rae-api-com/rae-tui/discussions)
 

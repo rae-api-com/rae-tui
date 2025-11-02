@@ -34,8 +34,8 @@ func selectWordFromSuggestions(suggestions []string) string {
 	for i, suggestion := range suggestions {
 		fmt.Printf("  %s%d%s. %s\n", Yellow, i+1, Reset, suggestion)
 	}
-	fmt.Printf("  %s0%s. Cancel\n", Yellow, Reset)
-	fmt.Printf("\n%sSelect a word (1-%d) or 0 to cancel: %s", Cyan, len(suggestions), Reset)
+	fmt.Printf("  %s0%s. Cancelar\n", Yellow, Reset)
+	fmt.Printf("\n%sSelecciona una palabra (1-%d) o 0 para cancelar: %s", Cyan, len(suggestions), Reset)
 
 	// Read user input
 	scanner := bufio.NewScanner(os.Stdin)
@@ -45,19 +45,19 @@ func selectWordFromSuggestions(suggestions []string) string {
 	// Parse selection
 	choice, err := strconv.Atoi(input)
 	if err != nil {
-		fmt.Printf("%sInvalid input. Please enter a number.%s\n", Red, Reset)
+		fmt.Printf("%sEntrada inválida. Por favor ingresa un número.%s\n", Red, Reset)
 		return ""
 	}
 
 	// Validate choice
 	if choice == 0 {
-		fmt.Printf("%sCancelled.%s\n", Yellow, Reset)
+		fmt.Printf("%sCancelado.%s\n", Yellow, Reset)
 		return ""
 	}
 
 	if choice < 1 || choice > len(suggestions) {
 		fmt.Printf(
-			"%sInvalid choice. Please select a number between 1 and %d.%s\n",
+			"%sOpción inválida. Por favor selecciona un número entre 1 y %d.%s\n",
 			Red,
 			len(suggestions),
 			Reset,
@@ -68,18 +68,97 @@ func selectWordFromSuggestions(suggestions []string) string {
 	return suggestions[choice-1]
 }
 
+// selectWordFromSearchResults displays a list of search results and allows the user to select one
+func selectWordFromSearchResults(searchResults []rae.SearchResult) string {
+	if len(searchResults) == 0 {
+		return ""
+	}
+
+	fmt.Printf("\n%sBúsqueda difusa - Resultados encontrados:%s\n", Bold, Reset)
+
+	// Display numbered list of search results
+	for i, result := range searchResults {
+		wordEntry, err := result.WordEntry()
+		if err == nil && wordEntry != nil {
+			// Show word and a preview of the first definition if available
+			preview := ""
+			if len(wordEntry.Meanings) > 0 && len(wordEntry.Meanings[0].Definitions) > 0 {
+				def := wordEntry.Meanings[0].Definitions[0].Raw
+				if len(def) > 60 {
+					preview = def[:60] + "..."
+				} else {
+					preview = def
+				}
+			}
+			if preview != "" {
+				fmt.Printf("  %s%d%s. %s%s%s - %s%s%s\n", Yellow, i+1, Reset, Bold, result.Doc.Word, Reset, Cyan, preview, Reset)
+			} else {
+				fmt.Printf("  %s%d%s. %s%s%s\n", Yellow, i+1, Reset, Bold, result.Doc.Word, Reset)
+			}
+		} else {
+			fmt.Printf("  %s%d%s. %s%s%s\n", Yellow, i+1, Reset, Bold, result.Doc.Word, Reset)
+		}
+	}
+	fmt.Printf("  %s0%s. Cancelar\n", Yellow, Reset)
+	fmt.Printf("\n%sSelecciona una palabra (1-%d) o 0 para cancelar: %s", Cyan, len(searchResults), Reset)
+
+	// Read user input
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Scan()
+	input := strings.TrimSpace(scanner.Text())
+
+	// Parse selection
+	choice, err := strconv.Atoi(input)
+	if err != nil {
+		fmt.Printf("%sEntrada inválida. Por favor ingresa un número.%s\n", Red, Reset)
+		return ""
+	}
+
+	// Validate choice
+	if choice == 0 {
+		fmt.Printf("%sCancelado.%s\n", Yellow, Reset)
+		return ""
+	}
+
+	if choice < 1 || choice > len(searchResults) {
+		fmt.Printf(
+			"%sOpción inválida. Por favor selecciona un número entre 1 y %d.%s\n",
+			Red,
+			len(searchResults),
+			Reset,
+		)
+		return ""
+	}
+
+	return searchResults[choice-1].Doc.Word
+}
+
 func renderNoTUI(ctx context.Context, cli *rae.Client, word string) {
 	res, err := cli.Word(ctx, word)
 	if err != nil {
 		if len(res.Suggestions) > 0 {
-			fmt.Printf("Did you mean:\n")
+			fmt.Printf("¿Quisiste decir:\n")
 			selectedWord := selectWordFromSuggestions(res.Suggestions)
 			if selectedWord != "" {
-				fmt.Printf("\n%sSearching for: %s%s\n", Bold, selectedWord, Reset)
+				fmt.Printf("\n%sBuscando: %s%s\n", Bold, selectedWord, Reset)
 				renderNoTUI(ctx, cli, selectedWord) // Recursively search with selected word
 			}
 		} else {
-			fmt.Printf("%sNo word found and no suggestions available for: %s%s\n", Red, word, Reset)
+			// No word found and no suggestions, try fuzzy search
+			fmt.Printf("%sNo se encontró la palabra y no hay sugerencias disponibles para: %s%s\n", Yellow, word, Reset)
+			fmt.Printf("%sBuscando resultados difusos...%s\n", Cyan, Reset)
+
+			searchResults, searchErr := cli.Search(ctx, word)
+			if searchErr != nil || len(searchResults) == 0 {
+				fmt.Printf("%sNo se encontraron resultados de búsqueda difusa para: %s%s\n", Red, word, Reset)
+				return
+			}
+
+			selectedWord := selectWordFromSearchResults(searchResults)
+			if selectedWord != "" {
+				fmt.Printf("\n%sBuscando: %s%s\n", Bold, selectedWord, Reset)
+				renderNoTUI(ctx, cli, selectedWord) // Recursively search with selected word
+			}
 		}
 		return
 	}
