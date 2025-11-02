@@ -451,41 +451,44 @@ func (t *Tui) handleRune(r rune) *tcell.EventKey {
 
 func renderConjugations(conjugations *rae.Conjugations, resultsView *tview.List) {
 	if np := conjugations.ConjugationNonPersonal; (np != rae.ConjugationNonPersonal{}) {
-		resultsView.AddItem("[::b]Formas no personales", "", 0, nil)
-		resultsView.AddItem(fmt.Sprintf("  Infinitivo: %s", np.Infinitive), "", 0, nil)
-		resultsView.AddItem(fmt.Sprintf("  Participio: %s", np.Participle), "", 0, nil)
-		resultsView.AddItem(fmt.Sprintf("  Gerundio: %s", np.Gerund), "", 0, nil)
+		resultsView.AddItem("[yellow][::b]Formas no personales[white]", "", 0, nil)
+		resultsView.AddItem(
+			fmt.Sprintf(
+				"  [cyan]Infinitivo:[white] %s  [cyan]Participio:[white] %s  [cyan]Gerundio:[white] %s",
+				np.Infinitive,
+				np.Participle,
+				np.Gerund,
+			),
+			"",
+			0,
+			nil,
+		)
+		resultsView.AddItem("", "", 0, nil)
 	}
 
 	if ind := conjugations.ConjugationIndicative; (ind != rae.ConjugationIndicative{}) {
-		resultsView.AddItem("", "", 0, nil)
-		resultsView.AddItem("[::b]Modo Indicativo", "", 0, nil)
+		resultsView.AddItem("[yellow][::b]Modo Indicativo[white]", "", 0, nil)
 		renderVerbalConjugation("Presente", ind.Present, resultsView)
 		renderVerbalConjugation("Pretérito Imperfecto", ind.Imperfect, resultsView)
 		renderVerbalConjugation("Pretérito Perfecto Simple", ind.Preterite, resultsView)
 		renderVerbalConjugation("Futuro", ind.Future, resultsView)
 		renderVerbalConjugation("Condicional", ind.Conditional, resultsView)
+		resultsView.AddItem("", "", 0, nil)
 	}
 
 	if subj := conjugations.ConjugationSubjunctive; (subj != rae.ConjugationSubjunctive{}) {
-		resultsView.AddItem("", "", 0, nil)
-		resultsView.AddItem("[::b]Modo Subjuntivo", "", 0, nil)
+		resultsView.AddItem("[yellow][::b]Modo Subjuntivo[white]", "", 0, nil)
 		renderVerbalConjugation("Presente", subj.Present, resultsView)
 		renderVerbalConjugation("Pretérito Imperfecto", subj.Imperfect, resultsView)
 		renderVerbalConjugation("Futuro", subj.Future, resultsView)
+		resultsView.AddItem("", "", 0, nil)
 	}
 
 	if imp := conjugations.ConjugationImperative; (imp != rae.ConjugationImperative{}) {
-		resultsView.AddItem("", "", 0, nil)
-		resultsView.AddItem("[::b]Modo Imperativo", "", 0, nil)
+		resultsView.AddItem("[yellow][::b]Modo Imperativo[white]", "", 0, nil)
 		resultsView.AddItem(
-			fmt.Sprintf("  2da Persona Singular: %s", imp.SingularSecondPerson),
-			"",
-			0,
-			nil,
-		)
-		resultsView.AddItem(
-			fmt.Sprintf("  2da Persona Plural: %s", imp.PluralSecondPerson),
+			fmt.Sprintf("  [cyan]Tú:[white] %s  [cyan]Vosotros:[white] %s",
+				imp.SingularSecondPerson, imp.PluralSecondPerson),
 			"",
 			0,
 			nil,
@@ -494,14 +497,33 @@ func renderConjugations(conjugations *rae.Conjugations, resultsView *tview.List)
 }
 
 func renderVerbalConjugation(title string, conj rae.Conjugation, resultsView *tview.List) {
-	resultsView.AddItem(fmt.Sprintf("[::b]%s", title), "", 0, nil)
-	resultsView.AddItem(fmt.Sprintf("  Yo %s", conj.SingularFirstPerson), "", 0, nil)
-	resultsView.AddItem(fmt.Sprintf("  Tú %s", conj.SingularSecondPerson), "", 0, nil)
-	resultsView.AddItem(fmt.Sprintf("  Él/Ella/Usted %s", conj.SingularThirdPerson), "", 0, nil)
-	resultsView.AddItem(fmt.Sprintf("  Nosotros %s", conj.PluralFirstPerson), "", 0, nil)
-	resultsView.AddItem(fmt.Sprintf("  Vosotros %s", conj.PluralSecondPerson), "", 0, nil)
+	resultsView.AddItem(fmt.Sprintf("  [cyan][::b]%s[white]", title), "", 0, nil)
+
+	// Primera persona singular y plural en una línea
 	resultsView.AddItem(
-		fmt.Sprintf("  Ellos/Ellas/Ustedes: %s", conj.PluralThirdPerson),
+		fmt.Sprintf("    [yellow]Yo:[white] %-25s  [yellow]Nosotros:[white] %s",
+			conj.SingularFirstPerson, conj.PluralFirstPerson),
+		"",
+		0,
+		nil,
+	)
+
+	// Segunda persona singular y plural
+	resultsView.AddItem(
+		fmt.Sprintf("    [yellow]Tú:[white] %-25s  [yellow]Vosotros:[white] %s",
+			conj.SingularSecondPerson, conj.PluralSecondPerson),
+		"",
+		0,
+		nil,
+	)
+
+	// Tercera persona singular y plural
+	resultsView.AddItem(
+		fmt.Sprintf(
+			"    [yellow]Él/Ella/Usted:[white] %-15s  [yellow]Ellos/Ellas/Ustedes:[white] %s",
+			conj.SingularThirdPerson,
+			conj.PluralThirdPerson,
+		),
 		"",
 		0,
 		nil,
