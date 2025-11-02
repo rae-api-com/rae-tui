@@ -35,7 +35,12 @@ func selectWordFromSuggestions(suggestions []string) string {
 		fmt.Printf("  %s%d%s. %s\n", Yellow, i+1, Reset, suggestion)
 	}
 	fmt.Printf("  %s0%s. Cancelar\n", Yellow, Reset)
-	fmt.Printf("\n%sSelecciona una palabra (1-%d) o 0 para cancelar: %s", Cyan, len(suggestions), Reset)
+	fmt.Printf(
+		"\n%sSelecciona una palabra (1-%d) o 0 para cancelar: %s",
+		Cyan,
+		len(suggestions),
+		Reset,
+	)
 
 	// Read user input
 	scanner := bufio.NewScanner(os.Stdin)
@@ -91,7 +96,18 @@ func selectWordFromSearchResults(searchResults []rae.SearchResult) string {
 				}
 			}
 			if preview != "" {
-				fmt.Printf("  %s%d%s. %s%s%s - %s%s%s\n", Yellow, i+1, Reset, Bold, result.Doc.Word, Reset, Cyan, preview, Reset)
+				fmt.Printf(
+					"  %s%d%s. %s%s%s - %s%s%s\n",
+					Yellow,
+					i+1,
+					Reset,
+					Bold,
+					result.Doc.Word,
+					Reset,
+					Cyan,
+					preview,
+					Reset,
+				)
 			} else {
 				fmt.Printf("  %s%d%s. %s%s%s\n", Yellow, i+1, Reset, Bold, result.Doc.Word, Reset)
 			}
@@ -100,7 +116,12 @@ func selectWordFromSearchResults(searchResults []rae.SearchResult) string {
 		}
 	}
 	fmt.Printf("  %s0%s. Cancelar\n", Yellow, Reset)
-	fmt.Printf("\n%sSelecciona una palabra (1-%d) o 0 para cancelar: %s", Cyan, len(searchResults), Reset)
+	fmt.Printf(
+		"\n%sSelecciona una palabra (1-%d) o 0 para cancelar: %s",
+		Cyan,
+		len(searchResults),
+		Reset,
+	)
 
 	// Read user input
 	scanner := bufio.NewScanner(os.Stdin)

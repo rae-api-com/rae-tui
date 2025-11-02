@@ -14,208 +14,70 @@ import (
 type State struct {
 	searching   bool
 	suggestions bool
+	fuzzySearch bool
 }
 
 type Tui struct {
 	cli *rae.Client
-
 	app *tview.Application
 
-	mainLayout *tview.Flex
-
-	header *tview.TextView
-
-	footer *tview.TextView
-
-	resultsView *tview.List
-
-	modalContainer *tview.Flex
-
-	inputField *tview.InputField
-
-	form *tview.Form
-
-	pages *tview.Pages
-
+	// Layout components
+	mainLayout      *tview.Flex
+	header          *tview.TextView
+	footer          *tview.TextView
+	resultsView     *tview.List
 	suggestionsList *tview.List
 
+	// Search modal
+	modalContainer *tview.Flex
+	inputField     *tview.InputField
+	form           *tview.Form
+
+	// Pages
+	pages *tview.Pages
+
+	// State
 	state *State
-}
-
-func (t *Tui) exit() {
-	t.app.Stop()
-}
-
-func (t *Tui) goBack() {
-	switch {
-	case t.state.suggestions:
-		t.state.suggestions = false
-		t.pages.SwitchToPage("main")
-
-	case t.state.searching:
-		t.state.searching = false
-		t.pages.SwitchToPage("main")
-
-	default:
-		t.exit()
-	}
-}
-
-func (t *Tui) search(ctx context.Context, w string) {
-	res, err := t.cli.Word(ctx, w)
-	if err != nil {
-		if len(res.Suggestions) > 0 {
-			t.showSuggestions(ctx, res.Suggestions)
-			return
-		}
-		t.modalContainer.SetBackgroundColor(tcell.ColorRed)
-		t.inputField.SetText("Palabra no encontrada")
-		t.state.searching = false
-		t.pages.SwitchToPage("main")
-		return
-	}
-
-	t.resultsView.Clear()
-
-	for _, meaning := range res.Meanings {
-		for _, def := range meaning.Definitions {
-			// Formato: "1. Definición: [Descripción]"
-			// resultText := fmt.Sprintf("%d. %s: %s", def.MeaningNumber, def.Category, def.Raw)
-			resultText := def.Raw
-			t.resultsView.AddItem(resultText, "", 0, nil)
-		}
-		if meaning.Conjugations != nil {
-			t.resultsView.AddItem("", "", 0, nil) // Espacio en blanco
-			t.resultsView.AddItem(
-				"[::b]Conjugaciones:",
-				"",
-				0,
-				nil,
-			)
-
-			t.resultsView.AddItem("", "", 0, nil) // Espacio en blanco
-			renderConjugations(meaning.Conjugations, t.resultsView)
-		}
-
-	}
-
-	// Only switch to main if we have results
-	t.state.searching = false
-	t.pages.SwitchToPage("main")
-}
-
-func (t *Tui) showSuggestions(ctx context.Context, suggestions []string) {
-	t.state.suggestions = true
-	t.state.searching = false
-
-	t.suggestionsList.Clear()
-	t.suggestionsList.AddItem("[yellow]¿Quisiste decir?", "", 0, nil)
-	t.suggestionsList.AddItem("", "", 0, nil)
-
-	for i, suggestion := range suggestions {
-		text := fmt.Sprintf("%d. %s", i+1, suggestion)
-		t.suggestionsList.AddItem(text, suggestion, rune('0'+i+1), func() {
-			// This callback will be handled by the SetSelectedFunc
-		})
-	}
-
-	t.suggestionsList.AddItem("", "", 0, nil)
-	t.suggestionsList.AddItem("0. Cancelar", "", '0', func() {
-		t.goBack()
-	})
-
-	t.pages.ShowPage("suggestions")
-}
-
-func (t *Tui) handleEvent(event *tcell.EventKey) *tcell.EventKey {
-	switch event.Key() {
-	case tcell.KeyEscape:
-		t.goBack()
-
-	case tcell.KeyRune:
-		if t.state.suggestions {
-			// Handle number selection for suggestions
-			if event.Rune() >= '0' && event.Rune() <= '9' {
-				num := int(event.Rune() - '0')
-				if num == 0 {
-					t.goBack()
-				} else {
-					// Select suggestion by number
-					itemCount := t.suggestionsList.GetItemCount()
-					// Skip header items (first 2) and find the actual suggestion
-					for i := 2; i < itemCount-2; i++ {
-						text, secondary := t.suggestionsList.GetItemText(i)
-						if len(text) > 0 && text[0] == byte('0'+num) {
-							if secondary != "" {
-								t.state.suggestions = false
-								t.search(context.Background(), secondary)
-							}
-							break
-						}
-					}
-				}
-			}
-		} else if !t.state.searching {
-			switch event.Rune() {
-			case 'q':
-				t.exit()
-			case 'n':
-				t.state.searching = true
-				t.pages.ShowPage("modal")
-			case 'j':
-				t.resultsView.SetCurrentItem(t.resultsView.GetCurrentItem() + 1)
-			case 'k':
-				t.resultsView.SetCurrentItem(t.resultsView.GetCurrentItem() - 1)
-			}
-		}
-	case tcell.KeyUp:
-		if t.state.suggestions {
-			t.suggestionsList.SetCurrentItem(t.suggestionsList.GetCurrentItem() - 1)
-		} else if !t.state.searching {
-			t.resultsView.SetCurrentItem(t.resultsView.GetCurrentItem() - 1)
-		}
-	case tcell.KeyDown:
-		if t.state.suggestions {
-			t.suggestionsList.SetCurrentItem(t.suggestionsList.GetCurrentItem() + 1)
-		} else if !t.state.searching {
-			t.resultsView.SetCurrentItem(t.resultsView.GetCurrentItem() + 1)
-		}
-	case tcell.KeyEnter:
-		if t.state.suggestions {
-			// Select current suggestion
-			_, selectedSuggestion := t.suggestionsList.GetItemText(
-				t.suggestionsList.GetCurrentItem(),
-			)
-			if selectedSuggestion != "" {
-				t.state.suggestions = false
-				t.search(context.Background(), selectedSuggestion)
-			}
-		}
-	default:
-	}
-	return event
 }
 
 func NewTUI(cli *rae.Client) *Tui {
 	return &Tui{
+		cli:             cli,
 		app:             tview.NewApplication(),
 		mainLayout:      tview.NewFlex(),
 		header:          tview.NewTextView(),
 		footer:          tview.NewTextView(),
 		resultsView:     tview.NewList(),
+		suggestionsList: tview.NewList(),
 		modalContainer:  tview.NewFlex(),
 		inputField:      tview.NewInputField(),
 		form:            tview.NewForm(),
 		pages:           tview.NewPages(),
-		suggestionsList: tview.NewList(),
-		cli:             cli,
-		state:           new(State),
+		state:           &State{},
 	}
 }
 
 func (t *Tui) Run(ctx context.Context, word fp.Option[string]) {
 	t.state.searching = word.IsNone()
+	t.setupUI()
+	t.setupPages()
+	t.setupEventHandlers()
 
+	t.pages.SwitchToPage("main")
+
+	if t.state.searching {
+		t.pages.SwitchToPage("modal")
+	} else {
+		t.search(ctx, word.UnwrapUnsafe())
+	}
+
+	if err := t.app.SetRoot(t.pages, true).Run(); err != nil {
+		panic(err)
+	}
+}
+
+func (t *Tui) setupUI() {
+	// Header
 	t.header.
 		SetTextStyle(tcell.StyleDefault.Bold(true)).
 		SetText("Diccionario RAE").
@@ -224,30 +86,47 @@ func (t *Tui) Run(ctx context.Context, word fp.Option[string]) {
 		SetTextColor(tcell.ColorWhite).
 		SetBackgroundColor(tcell.ColorGreen)
 
+	// Footer
+	t.updateFooter()
 	t.footer.
-		SetTextStyle(tcell.StyleDefault.Bold(true)).
-		SetText("[yellow]↑/k[:] Subir  ↓/j[:] Bajar  n[:] Nueva búsqueda  1-9[:] Seleccionar sugerencia  q/ESC[:] Salir").
 		SetTextAlign(tview.AlignCenter).
 		SetDynamicColors(true).
 		SetTextColor(tcell.ColorWhite).
 		SetBackgroundColor(tcell.ColorDarkCyan)
 
-	t.resultsView.
-		ShowSecondaryText(false)
+	// Results view
+	t.resultsView.ShowSecondaryText(false)
+	t.resultsView.SetSelectedFunc(func(index int, mainText, secondaryText string, shortcut rune) {
+		// Optional action when selecting a result
+	})
 
-	modal := func(p tview.Primitive, width, height int) tview.Primitive {
-		return tview.NewFlex().
-			AddItem(nil, 0, 1, false).
-			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
-				AddItem(nil, 0, 1, false).
-				AddItem(p,
-					height, 1, true).
-				AddItem(nil, 0, 1, false), width, 1, true).
-			AddItem(nil, 0, 1, false)
-	}
+	// Suggestions/Fuzzy search list
+	t.suggestionsList.ShowSecondaryText(false)
+	t.suggestionsList.SetSelectedStyle(tcell.StyleDefault.
+		Foreground(tcell.ColorYellow).
+		Background(tcell.ColorDarkBlue).
+		Bold(true))
+	t.suggestionsList.SetSelectedFunc(
+		func(index int, mainText, secondaryText string, shortcut rune) {
+			if secondaryText != "" {
+				t.selectWord(secondaryText)
+			}
+		},
+	)
 
-	t.modalContainer.
-		SetDirection(tview.FlexRow)
+	// Main layout
+	t.mainLayout.
+		SetDirection(tview.FlexRow).
+		AddItem(t.header, 1, 1, false).
+		AddItem(t.resultsView, 0, 10, true).
+		AddItem(t.footer, 1, 1, false)
+
+	// Search modal
+	t.setupSearchModal()
+}
+
+func (t *Tui) setupSearchModal() {
+	t.modalContainer.SetDirection(tview.FlexRow)
 
 	t.inputField.
 		SetLabel("Buscar: ").
@@ -257,75 +136,317 @@ func (t *Tui) Run(ctx context.Context, word fp.Option[string]) {
 			case tcell.KeyEscape:
 				t.goBack()
 			case tcell.KeyEnter:
-				t.search(ctx, t.inputField.GetText())
+				t.search(context.Background(), t.inputField.GetText())
 			}
 		})
 
 	t.form.
 		AddFormItem(t.inputField).
 		AddButton("Buscar", func() {
-			t.search(ctx, t.inputField.GetText())
+			t.search(context.Background(), t.inputField.GetText())
 		}).
 		AddButton("Limpiar", func() {
 			t.inputField.SetText("")
 		})
 
 	t.modalContainer.AddItem(t.form, 0, 1, true)
+}
 
-	// Setup suggestions list
-	t.suggestionsList.
-		ShowSecondaryText(false).
-		SetSelectedFunc(func(index int, mainText string, secondaryText string, shortcut rune) {
-			if secondaryText != "" {
-				t.state.suggestions = false
-				t.search(ctx, secondaryText)
-			} else if index == t.suggestionsList.GetItemCount()-1 {
-				// Last item is "Cancel"
-				t.goBack()
-			}
-		})
+func (t *Tui) setupPages() {
+	modal := func(p tview.Primitive, width, height int) tview.Primitive {
+		return tview.NewFlex().
+			AddItem(nil, 0, 1, false).
+			AddItem(tview.NewFlex().SetDirection(tview.FlexRow).
+				AddItem(nil, 0, 1, false).
+				AddItem(p, height, 1, true).
+				AddItem(nil, 0, 1, false), width, 1, true).
+			AddItem(nil, 0, 1, false)
+	}
+
+	// Full-page layout for suggestions/fuzzy search
+	listLayout := tview.NewFlex().
+		SetDirection(tview.FlexRow).
+		AddItem(t.header, 1, 1, false).
+		AddItem(t.suggestionsList, 0, 10, true).
+		AddItem(t.footer, 1, 1, false)
 
 	t.pages.
 		AddPage("main", t.mainLayout, true, true).
-		AddPage("modal", modal(t.modalContainer, 40, 10), true, word.IsNone()).
-		AddPage("suggestions", modal(t.suggestionsList, 50, 15), true, false)
+		AddPage("modal", modal(t.modalContainer, 40, 10), true, false).
+		AddPage("list", listLayout, true, false)
+}
 
-	t.mainLayout.
-		SetDirection(tview.FlexRow).
-		AddItem(t.header, 1, 1, false).
-		AddItem(t.resultsView, 0, 10, true).
-		AddItem(t.footer, 1, 1, false)
-
-	t.resultsView.SetSelectedFunc(
-		func(index int, mainText string, secondaryText string, shortcut rune) {
-			// Acción al seleccionar un elemento (opcional)
-		},
-	)
-	t.resultsView.SetMainTextStyle(tcell.StyleDefault.Normal())
-
-	t.resultsView.SetChangedFunc(
-		func(index int, mainText string, secondaryText string, shortcut rune) {
-			// Resaltar el texto seleccionado
-			t.resultsView.SetMainTextStyle(tcell.StyleDefault.Normal())
-			t.resultsView.SetItemText(index, mainText, secondaryText)
-			t.resultsView.SetMainTextStyle(tcell.StyleDefault.Bold(true))
-		},
-	)
-
-	// Configurar eventos globales
+func (t *Tui) setupEventHandlers() {
 	t.app.SetInputCapture(t.handleEvent)
+}
 
-	t.pages.ShowPage("main")
+func (t *Tui) updateFooter() {
+	var text string
+	switch {
+	case t.state.suggestions:
+		text = "[yellow]↑/k[:] Subir  ↓/j[:] Bajar  Enter/1-9[:] Seleccionar  q/ESC[:] Volver"
+	case t.state.fuzzySearch:
+		text = "[yellow]↑/k[:] Subir  ↓/j[:] Bajar  Enter[:] Seleccionar  q/ESC[:] Volver"
+	case t.state.searching:
+		text = "[yellow]Enter[:] Buscar  ESC[:] Cancelar"
+	default:
+		text = "[yellow]↑/k[:] Subir  ↓/j[:] Bajar  n[:] Nueva búsqueda  q/ESC[:] Salir"
+	}
+	t.footer.SetText(text)
+	t.footer.SetTextStyle(tcell.StyleDefault.Bold(true))
+}
 
-	if t.state.searching {
-		t.pages.ShowPage("modal")
-	} else {
-		t.search(ctx, word.UnwrapUnsafe())
+func (t *Tui) resetState() {
+	t.state.searching = false
+	t.state.suggestions = false
+	t.state.fuzzySearch = false
+	t.updateFooter()
+}
+
+func (t *Tui) goBack() {
+	switch {
+	case t.state.suggestions, t.state.fuzzySearch:
+		t.resetState()
+		t.pages.SwitchToPage("main")
+	case t.state.searching:
+		t.resetState()
+		t.pages.SwitchToPage("main")
+	default:
+		t.exit()
+	}
+}
+
+func (t *Tui) exit() {
+	t.app.Stop()
+}
+
+func (t *Tui) selectWord(word string) {
+	t.resetState()
+	t.search(context.Background(), word)
+}
+
+func (t *Tui) search(ctx context.Context, word string) {
+	res, err := t.cli.Word(ctx, word)
+	if err != nil {
+		if len(res.Suggestions) > 0 {
+			t.showSuggestions(res.Suggestions)
+			return
+		}
+		t.showFuzzySearchResults(ctx, word)
+		return
 	}
 
-	if err := t.app.SetRoot(t.pages, true).Run(); err != nil {
-		panic(err)
+	t.displayResults(res)
+}
+
+func (t *Tui) displayResults(res rae.WordEntry) {
+	t.resetState()
+	t.resultsView.Clear()
+
+	for _, meaning := range res.Meanings {
+		for _, def := range meaning.Definitions {
+			t.resultsView.AddItem(def.Raw, "", 0, nil)
+		}
+
+		if meaning.Conjugations != nil {
+			t.resultsView.AddItem("", "", 0, nil)
+			t.resultsView.AddItem("[::b]Conjugaciones:", "", 0, nil)
+			t.resultsView.AddItem("", "", 0, nil)
+			renderConjugations(meaning.Conjugations, t.resultsView)
+		}
 	}
+
+	t.pages.SwitchToPage("main")
+}
+
+func (t *Tui) showSuggestions(suggestions []string) {
+	t.resetState()
+	t.state.suggestions = true
+	t.updateFooter()
+
+	t.suggestionsList.Clear()
+	t.suggestionsList.AddItem("[yellow]¿Quisiste decir?", "", 0, nil)
+	t.suggestionsList.AddItem("", "", 0, nil)
+
+	for i, suggestion := range suggestions {
+		text := fmt.Sprintf("%d. %s", i+1, suggestion)
+		t.suggestionsList.AddItem(text, suggestion, rune('0'+i+1), nil)
+	}
+
+	t.suggestionsList.AddItem("", "", 0, nil)
+	t.suggestionsList.AddItem("0. Cancelar", "", '0', nil)
+
+	t.pages.SwitchToPage("list")
+}
+
+func (t *Tui) showFuzzySearchResults(ctx context.Context, word string) {
+	t.resetState()
+	t.state.fuzzySearch = true
+	t.updateFooter()
+
+	searchResults, err := t.cli.Search(ctx, word)
+	if err != nil || len(searchResults) == 0 {
+		t.resetState()
+		t.showError("No se encontraron resultados de búsqueda difusa")
+		return
+	}
+
+	t.suggestionsList.Clear()
+	t.suggestionsList.AddItem("[yellow]Búsqueda difusa - Resultados encontrados:", "", 0, nil)
+	t.suggestionsList.AddItem("", "", 0, nil)
+
+	for _, result := range searchResults {
+		searchWord := result.Doc.Word
+		wordEntry, err := result.WordEntry()
+
+		var text string
+		if err == nil && wordEntry != nil && len(wordEntry.Meanings) > 0 &&
+			len(wordEntry.Meanings[0].Definitions) > 0 {
+			def := wordEntry.Meanings[0].Definitions[0].Raw
+			preview := def
+			if len(def) > 70 {
+				preview = def[:70] + "..."
+			}
+			text = fmt.Sprintf("[yellow][::b]%s[white] - %s", searchWord, preview)
+		} else {
+			text = fmt.Sprintf("[yellow][::b]%s", searchWord)
+		}
+
+		t.suggestionsList.AddItem(text, searchWord, 0, nil)
+	}
+
+	t.pages.SwitchToPage("list")
+}
+
+func (t *Tui) showError(message string) {
+	t.inputField.SetText(message)
+	t.modalContainer.SetBackgroundColor(tcell.ColorRed)
+	t.state.searching = true
+	t.updateFooter()
+	t.pages.SwitchToPage("modal")
+}
+
+func (t *Tui) handleEvent(event *tcell.EventKey) *tcell.EventKey {
+	switch event.Key() {
+	case tcell.KeyEscape:
+		t.goBack()
+		return nil
+
+	case tcell.KeyEnter:
+		if t.state.suggestions || t.state.fuzzySearch {
+			_, selectedWord := t.suggestionsList.GetItemText(t.suggestionsList.GetCurrentItem())
+			if selectedWord != "" {
+				t.selectWord(selectedWord)
+			}
+			return nil
+		}
+
+	case tcell.KeyUp:
+		if t.state.suggestions || t.state.fuzzySearch {
+			idx := t.suggestionsList.GetCurrentItem()
+			if idx > 0 {
+				t.suggestionsList.SetCurrentItem(idx - 1)
+			}
+			return nil
+		} else if !t.state.searching {
+			idx := t.resultsView.GetCurrentItem()
+			if idx > 0 {
+				t.resultsView.SetCurrentItem(idx - 1)
+			}
+			return nil
+		}
+
+	case tcell.KeyDown:
+		if t.state.suggestions || t.state.fuzzySearch {
+			idx := t.suggestionsList.GetCurrentItem()
+			if idx < t.suggestionsList.GetItemCount()-1 {
+				t.suggestionsList.SetCurrentItem(idx + 1)
+			}
+			return nil
+		} else if !t.state.searching {
+			idx := t.resultsView.GetCurrentItem()
+			if idx < t.resultsView.GetItemCount()-1 {
+				t.resultsView.SetCurrentItem(idx + 1)
+			}
+			return nil
+		}
+
+	case tcell.KeyRune:
+		// If searching, let the input field handle all runes (don't intercept 'q')
+		if t.state.searching {
+			// Let the input field handle all runes normally
+			return event
+		}
+
+		return t.handleRune(event.Rune())
+	}
+
+	return event
+}
+
+func (t *Tui) handleRune(r rune) *tcell.EventKey {
+	switch r {
+	case 'q':
+		t.exit()
+		return nil
+
+	case 'j':
+		if t.state.suggestions || t.state.fuzzySearch {
+			idx := t.suggestionsList.GetCurrentItem()
+			if idx < t.suggestionsList.GetItemCount()-1 {
+				t.suggestionsList.SetCurrentItem(idx + 1)
+			}
+			return nil
+		}
+		idx := t.resultsView.GetCurrentItem()
+		if idx < t.resultsView.GetItemCount()-1 {
+			t.resultsView.SetCurrentItem(idx + 1)
+		}
+		return nil
+
+	case 'k':
+		if t.state.suggestions || t.state.fuzzySearch {
+			idx := t.suggestionsList.GetCurrentItem()
+			if idx > 0 {
+				t.suggestionsList.SetCurrentItem(idx - 1)
+			}
+			return nil
+		}
+		idx := t.resultsView.GetCurrentItem()
+		if idx > 0 {
+			t.resultsView.SetCurrentItem(idx - 1)
+		}
+		return nil
+
+	case 'n':
+		t.state.searching = true
+		t.inputField.SetText("") // Clear input
+		t.updateFooter()
+		t.pages.SwitchToPage("modal")
+		t.app.SetFocus(t.inputField) // Set focus to input field
+		return nil
+
+	default:
+		// Handle number selection for suggestions only (not fuzzy search)
+		if t.state.suggestions && r >= '0' && r <= '9' {
+			num := int(r - '0')
+			if num == 0 {
+				t.goBack()
+				return nil
+			}
+
+			itemCount := t.suggestionsList.GetItemCount()
+			for i := 2; i < itemCount-2; i++ {
+				text, secondary := t.suggestionsList.GetItemText(i)
+				if len(text) > 0 && text[0] == byte('0'+num) && secondary != "" {
+					t.selectWord(secondary)
+					return nil
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func renderConjugations(conjugations *rae.Conjugations, resultsView *tview.List) {
