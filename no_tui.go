@@ -191,6 +191,10 @@ func renderNoTUI(ctx context.Context, cli *rae.Client, word string) {
 			fmt.Printf("  - %s (%s%s%s)\n", definition.Raw, Bold, definition.Category, Reset)
 		}
 
+    if meaning.Origin != nil && meaning.Origin.Raw != "" {
+      fmt.Printf("\n  %sOrigen:%s %s\n", Bold, Reset, meaning.Origin.Raw)
+    }
+
 		if meaning.Conjugations != nil {
 			fmt.Printf("\n  %sConjugaciones%s\n", Bold, Reset)
 
