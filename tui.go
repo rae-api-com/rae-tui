@@ -249,9 +249,14 @@ func (t *Tui) displayResults(res rae.WordEntry) {
 		}
 
 		if meaning.Origin != nil && meaning.Origin.Raw != "" {
-      t.resultsView.AddItem("", "", 0, nil)
-      t.resultsView.AddItem(fmt.Sprintf("[yellow][::b]Origen:[white] %s", meaning.Origin.Raw), "", 0, nil)
-    }
+			t.resultsView.AddItem("", "", 0, nil)
+			t.resultsView.AddItem(
+				fmt.Sprintf("[yellow][::b]Origen:[white] %s", meaning.Origin.Raw),
+				"",
+				0,
+				nil,
+			)
+		}
 
 		if meaning.Conjugations != nil {
 			t.resultsView.AddItem("", "", 0, nil)
