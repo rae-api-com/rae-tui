@@ -4,12 +4,10 @@ go 1.24.0
 
 require (
 	github.com/gdamore/tcell/v2 v2.9.0
-	github.com/rae-api-com/go-rae v0.8.1
+	github.com/rae-api-com/go-rae v0.9.0
 	github.com/rivo/tview v0.42.0
 	github.com/sonirico/vago v0.9.0
 )
-
-replace github.com/rae-api-com/go-rae => ../go-rae
 
 require (
 	github.com/andybalholm/brotli v1.2.0 // indirect
