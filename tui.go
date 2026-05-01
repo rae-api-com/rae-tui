@@ -269,12 +269,12 @@ func (t *Tui) displayResults(res rae.WordEntry) {
 				}
 			}
 
-			if len(def.Synonyms) > 0 {
-				syns := formatRelatedWords(def.Synonyms)
+			if len(def.SynonymsV2) > 0 {
+				syns := formatRelatedWords(def.SynonymsV2)
 				t.resultsView.AddItem(fmt.Sprintf("    [cyan]Sin.:[white] %s", syns), "", 0, nil)
 			}
-			if len(def.Antonyms) > 0 {
-				ants := formatRelatedWords(def.Antonyms)
+			if len(def.AntonymsV2) > 0 {
+				ants := formatRelatedWords(def.AntonymsV2)
 				t.resultsView.AddItem(fmt.Sprintf("    [red]Ant.:[white] %s", ants), "", 0, nil)
 			}
 		}
